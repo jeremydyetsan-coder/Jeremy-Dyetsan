@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smurk Anime (jeremy) - Stream Unlimited Anime</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        obsidian: '#0a0b10',
+                        darkCard: '#121420',
+                        darkNav: '#181a29',
+                        neonViolet: '#8a2be2',
+                        neonGlow: '#a855f7',
+                        electricCyan: '#00f3ff',
+                    },
+                    boxShadow: {
+                        neon: '0 0 15px rgba(138, 43, 226, 0.4), 0 0 30px rgba(0, 243, 255, 0.2)',
+                        glowCyan: '0 0 12px rgba(0, 243, 255, 0.6)',
+                        glowViolet: '0 0 12px rgba(138, 43, 226, 0.6)'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Alpine.js for lightweight state management -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0b10;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #26293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8a2be2;
+        }
+        
+        .glass-panel {
+            background: rgba(18, 20, 32, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .neon-border {
+            border: 1px solid rgba(138, 43, 226, 0.4);
+        }
+
+        .neon-border:hover {
+            border-color: rgba(0, 243, 255, 0.8);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+        }
+
+        /* Glassmorphism gradient background */
+        .bg-cyber-gradient {
+            background: radial-gradient(circle at top right, rgba(138, 43, 226, 0.15), transparent 40%),
+                        radial-gradient(circle at bottom left, rgba(0, 243, 255, 0.1), transparent 40%);
+        }
+    </style>
+</head>
+<body x-data="smurkkApp()" x-init="initApp()" class="bg-obsidian text-slate-100 font-sans antialiased min-h-screen bg-cyber-gradient selection:bg-neonViolet selection:text-white flex flex-col">
+
+    <!-- TOP ANNOUNCEMENT BANNER -->
+    <template x-if="announcement">
+        <div class="bg-gradient-to-r from-purple-900 via-indigo-900 to-cyan-900 text-white text-xs md:text-sm py-2 px-4 text-center font-medium flex justify-between items-center relative shadow-md z-50">
+            <div class="flex-1 text-center flex items-center justify-center gap-2">
+                <i data-lucide="bell" class="w-4 h-4 text-electricCyan animate-bounce"></i>
+                <span x-text="announcement"></span>
+            </div>
+            <button @click="dismissAnnouncement()" class="text-slate-400 hover:text-white ml-2">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </template>
+
+    <!-- NAVIGATION BAR -->
+    <nav class="sticky top-0 z-40 glass-panel border-b border-slate-800 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            
+            <!-- Logo -->
+            <div class="flex items-center gap-6">
+                <a href="#" @click.prevent="currentView = 'catalog'; activeAnime = null;" class="flex items-center gap-2 group">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-neonViolet to-electricCyan flex items-center justify-center shadow-neon transform group-hover:scale-105 transition duration-300">
+                        <span class="font-black text-black text-xl tracking-wider">S</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-black text-xl tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-electricCyan">SHMURK</span>
+                        <span class="text-[10px] tracking-widest text-neonGlow font-semibold -mt-1">ANIME (SURK)</span>
+                    </div>
+                </a>
+
+                <!-- Navigation Links -->
+                <div class="hidden md:flex items-center gap-1 bg-darkNav p-1 rounded-xl border border-slate-800/80">
+                    <button @click="currentView = 'catalog'; activeAnime = null" 
+                            :class="currentView === 'catalog' && !activeAnime ? 'bg-neonViolet text-white shadow-glowViolet' : 'text-slate-400 hover:text-white'"
+                            class="px-4 py-1.5 rounded-lg text-sm font-medium transition duration-200 flex items-center gap-2">
+                        <i data-lucide="compass" class="w-4 h-4"></i> Browse
+                    </button>
+                    <button @click="currentView = 'watchlist'" 
+                            :class="currentView === 'watchlist' ? 'bg-neonViolet text-white shadow-glowViolet' : 'text-slate-400 hover:text-white'"
+                            class="px-4 py-1.5 rounded-lg text-sm font-medium transition duration-200 flex items-center gap-2 relative">
+                        <i data-lucide="bookmark" class="w-4 h-4"></i> My Watchlist
+                        <span x-show="watchlist.length > 0" class="bg-electricCyan text-black font-bold text-[10px] px-1.5 py-0.2 rounded-full" x-text="watchlist.length"></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="flex-1 max-w-md hidden sm:block relative">
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" 
+                           x-model="searchQuery" 
+                           @focus="currentView = 'catalog'; activeAnime = null"
+                           placeholder="Search anime, genres, studio..." 
+                           class="w-full pl-10 pr-4 py-2 bg-darkNav border border-slate-700/60 rounded-full text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-neonGlow focus:ring-1 focus:ring-neonGlow transition">
+                    <button x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Utilities & Admin Toggle -->
+            <div class="flex items-center gap-3">
+                <!-- Mobile Search Toggle -->
+                <button @click="mobileSearchOpen = !mobileSearchOpen" class="sm:hidden p-2 text-slate-300 hover:text-white">
+                    <i data-lucide="search" class="w-5 h-5"></i>
+                </button>
+
+                <!-- Admin Mode Badge Toggle -->
+                <button @click="toggleAdminModal()" 
+                        :class="isAdmin ? 'bg-gradient-to-r from-purple-600 to-pink-600 border-pink-400 text-white shadow-neon' : 'bg-darkNav border-slate-700 text-slate-400 hover:text-white'"
+                        class="border px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition duration-300">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-electricCyan" x-show="isAdmin"></i>
+                    <i data-lucide="lock" class="w-4 h-4" x-show="!isAdmin"></i>
+                    <span x-text="isAdmin ? 'Admin Dashboard' : 'Admin Login'"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Search Dropdown -->
+        <div x-show="mobileSearchOpen" x-collapse class="sm:hidden mt-3 pt-3 border-t border-slate-800">
+            <input type="text" 
+                   x-model="searchQuery" 
+                   @focus="currentView = 'catalog'; activeAnime = null"
+                   placeholder="Search anime..." 
+                   class="w-full px-4 py-2 bg-darkNav border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-neonGlow">
+        </div>
+    </nav>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6">
+
+        <!-- ================= CATALOG / BROWSE VIEW ================= -->
+        <div x-show="currentView === 'catalog' && !activeAnime && !isAdminView" class="space-y-8">
+            
+            <!-- HERO BANNER CAROUSEL -->
+            <div x-data="{ activeIndex: 0, timer: null }" 
+                 x-init="timer = setInterval(() => { activeIndex = (activeIndex + 1) % featuredAnimeList.length }, 6000)"
+                 @mouseenter="clearInterval(timer)"
+                 @mouseleave="timer = setInterval(() => { activeIndex = (activeIndex + 1) % featuredAnimeList.length }, 6000)"
+                 class="relative rounded-2xl overflow-hidden min-h-[380px] md:min-h-[460px] flex items-end shadow-2xl border border-slate-800/80">
+                
+                <template x-for="(hero, idx) in featuredAnimeList" :key="hero.id">
+                    <div x-show="activeIndex === idx" 
+                         x-transition:enter="transition ease-out duration-700"
+                         x-transition:enter-start="opacity-0 scale-105"
+                         x-transition:enter-end="opacity-100 scale-100"
+                         class="absolute inset-0 bg-cover bg-center"
+                         :style="`background-image: linear-gradient(to top, rgba(10, 11, 16, 1) 10%, rgba(10, 11, 16, 0.4) 60%, rgba(10, 11, 16, 0.2) 100%), url('${hero.banner}')`">
+                    </div>
+                </template>
+
+                <!-- Hero Content Overlay -->
+                <div class="relative z-10 p-6 md:p-10 max-w-2xl space-y-4">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="bg-electricCyan/20 text-electricCyan border border-electricCyan/40 text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1">
+                            <i data-lucide="flame" class="w-3.5 h-3.5"></i> Featured #<span x-text="activeIndex + 1"></span>
+                        </span>
+                        <span class="bg-purple-900/60 text-purple-200 border border-purple-500/30 text-xs px-2.5 py-0.5 rounded-full font-medium" x-text="featuredAnimeList[activeIndex]?.studio"></span>
+                        <span class="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                            <i data-lucide="star" class="w-3 h-3 fill-amber-400"></i> <span x-text="featuredAnimeList[activeIndex]?.rating"></span>
+                        </span>
+                    </div>
+
+                    <h1 class="text-3xl md:text-5xl font-black text-white tracking-tight drop-shadow-md" x-text="featuredAnimeList[activeIndex]?.title"></h1>
+
+                    <p class="text-slate-300 text-sm md:text-base line-clamp-2 md:line-clamp-3 leading-relaxed" x-text="featuredAnimeList[activeIndex]?.description"></p>
+
+                    <div class="flex items-center gap-3 pt-2">
+                        <button @click="openAnimeDetail(featuredAnimeList[activeIndex])" 
+                                class="bg-gradient-to-r from-neonViolet to-purple-600 hover:from-purple-600 hover:to-neonViolet text-white font-bold px-6 py-3 rounded-xl shadow-glowViolet flex items-center gap-2 transform hover:-translate-y-0.5 transition duration-200">
+                            <i data-lucide="play" class="w-5 h-5 fill-white"></i> Watch Now
+                        </button>
+                        <button @click="toggleWatchlist(featuredAnimeList[activeIndex])" 
+                                class="bg-darkNav/80 hover:bg-slate-800 text-white font-semibold px-4 py-3 rounded-xl border border-slate-700 flex items-center gap-2 transition">
+                            <i data-lucide="bookmark" :class="isInWatchlist(featuredAnimeList[activeIndex]?.id) ? 'fill-electricCyan text-electricCyan' : ''" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Carousel Indicators -->
+                <div class="absolute bottom-4 right-6 z-20 flex gap-2">
+                    <template x-for="(hero, idx) in featuredAnimeList" :key="'ind-'+hero.id">
+                        <button @click="activeIndex = idx" 
+                                :class="activeIndex === idx ? 'w-8 bg-electricCyan' : 'w-2 bg-slate-600 hover:bg-slate-400'"
+                                class="h-2 rounded-full transition-all duration-300"></button>
+                    </template>
+                </div>
+            </div>
+
+            <!-- FILTER & GENRE BAR -->
+            <div class="space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+                    <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+                        <i data-lucide="layout-grid" class="w-5 h-5 text-neonViolet"></i> Anime Catalog
+                        <span class="text-xs text-slate-500 font-normal" x-text="`(${filteredAnime.length} Titles)`"></span>
+                    </h2>
+
+                    <!-- Filter Controls -->
+                    <div class="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
+                        <select x-model="selectedGenre" class="bg-darkNav border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-neonGlow">
+                            <option value="All">All Genres</option>
+                            <template x-for="genre in genres" :key="genre">
+                                <option :value="genre" x-text="genre"></option>
+                            </template>
+                        </select>
+
+                        <select x-model="selectedType" class="bg-darkNav border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-neonGlow">
+                            <option value="All">Sub & Dub</option>
+                            <option value="SUB">Subtitled Only</option>
+                            <option value="DUB">Dubbed Only</option>
+                        </select>
+
+                        <select x-model="sortBy" class="bg-darkNav border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-neonGlow">
+                            <option value="rating">Top Rated</option>
+                            <option value="newest">Release Year</option>
+                            <option value="title">Alphabetical</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Genre Quick Tags -->
+                <div class="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar">
+                    <button @click="selectedGenre = 'All'" 
+                            :class="selectedGenre === 'All' ? 'bg-neonViolet text-white shadow-glowViolet' : 'bg-darkNav text-slate-400 hover:text-white border border-slate-800'"
+                            class="px-3.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition">
+                        All
+                    </button>
+                    <template x-for="genre in genres" :key="'tag-'+genre">
+                        <button @click="selectedGenre = genre" 
+                                :class="selectedGenre === genre ? 'bg-neonViolet text-white shadow-glowViolet' : 'bg-darkNav text-slate-400 hover:text-white border border-slate-800'"
+                                class="px-3.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition"
+                                x-text="genre">
+                        </button>
+                    </template>
+                </div>
+            </div>
+
+            <!-- ANIME CARDS GRID -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+                <template x-for="anime in filteredAnime" :key="anime.id">
+                    <div class="group bg-darkCard border border-slate-800/80 rounded-xl overflow-hidden hover:border-neonViolet/60 transition-all duration-300 hover:shadow-neon flex flex-col cursor-pointer relative"
+                         @click="openAnimeDetail(anime)">
+                        
+                        <!-- Poster Image & Badges -->
+                        <div class="relative aspect-[2/3] overflow-hidden bg-slate-900">
+                            <img :src="anime.poster" :alt="anime.title" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-t from-darkCard via-transparent to-transparent opacity-80"></div>
+                            
+                            <!-- Badges -->
+                            <div class="absolute top-2 left-2 flex flex-col gap-1">
+                                <span class="bg-black/70 backdrop-blur-md text-electricCyan text-[10px] font-bold px-2 py-0.5 rounded border border-electricCyan/30" x-text="anime.quality || 'HD'"></span>
+                            </div>
+
+                            <div class="absolute top-2 right-2 flex gap-1">
+                                <span class="bg-purple-950/80 backdrop-blur-md text-purple-300 text-[10px] font-bold px-1.5 py-0.5 rounded" x-text="anime.subDub"></span>
+                            </div>
+
+                            <!-- Rating overlay -->
+                            <div class="absolute bottom-2 left-2 flex items-center gap-1 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded text-xs text-amber-400 font-bold">
+                                <i data-lucide="star" class="w-3 h-3 fill-amber-400"></i>
+                                <span x-text="anime.rating"></span>
+                            </div>
+
+                            <!-- Bookmark Quick Button -->
+                            <button @click.stop="toggleWatchlist(anime)" class="absolute bottom-2 right-2 p-1.5 bg-black/60 hover:bg-neonViolet rounded-full text-white transition">
+                                <i data-lucide="bookmark" :class="isInWatchlist(anime.id) ? 'fill-electricCyan text-electricCyan' : 'text-slate-300'" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+
+                        <!-- Info -->
+                        <div class="p-3 flex-1 flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-slate-100 text-sm line-clamp-1 group-hover:text-neonGlow transition" x-text="anime.title"></h3>
+                                <div class="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                                    <span x-text="anime.year"></span>
+                                    <span>•</span>
+                                    <span x-text="`${anime.episodes?.length || 0} Ep`"></span>
+                                </div>
+                            </div>
+                            <div class="mt-2 flex flex-wrap gap-1">
+                                <template x-for="g in anime.genres.slice(0, 2)" :key="g">
+                                    <span class="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded" x-text="g"></span>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Empty State -->
+            <div x-show="filteredAnime.length === 0" class="text-center py-16 bg-darkCard/50 rounded-2xl border border-dashed border-slate-800 space-y-3">
+                <i data-lucide="search-x" class="w-12 h-12 mx-auto text-slate-600"></i>
+                <h3 class="text-lg font-bold text-slate-300">No Anime Found</h3>
+                <p class="text-sm text-slate-500">Try adjusting your filter search terms or clearing genres.</p>
+                <button @click="searchQuery = ''; selectedGenre = 'All'; selectedType = 'All';" class="bg-neonViolet text-white px-4 py-2 rounded-lg text-xs font-bold">Reset Filters</button>
+            </div>
+        </div>
+
+        <!-- ================= WATCHLIST VIEW ================= -->
+        <div x-show="currentView === 'watchlist' && !activeAnime && !isAdminView" class="space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div>
+                    <h2 class="text-2xl font-black text-white flex items-center gap-2">
+                        <i data-lucide="bookmark" class="w-6 h-6 text-electricCyan"></i> My Watchlist
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Your saved titles persist automatically in local storage.</p>
+                </div>
+                <button x-show="watchlist.length > 0" @click="clearWatchlist()" class="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear All
+                </button>
+            </div>
+
+            <div x-show="watchlistAnimeList.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <template x-for="anime in watchlistAnimeList" :key="'wl-'+anime.id">
+                    <div class="group bg-darkCard border border-slate-800 rounded-xl overflow-hidden hover:border-electricCyan/60 transition duration-300 flex flex-col cursor-pointer"
+                         @click="openAnimeDetail(anime)">
+                        <div class="relative aspect-[2/3] bg-slate-900">
+                            <img :src="anime.poster" :alt="anime.title" class="w-full h-full object-cover">
+                            <button @click.stop="toggleWatchlist(anime)" class="absolute top-2 right-2 p-1.5 bg-black/70 hover:bg-rose-600 rounded-full text-white transition">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div class="p-3">
+                            <h3 class="font-bold text-sm text-slate-100 line-clamp-1" x-text="anime.title"></h3>
+                            <span class="text-xs text-slate-400" x-text="`${anime.episodes?.length || 0} Episodes`"></span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <div x-show="watchlistAnimeList.length === 0" class="text-center py-20 bg-darkCard/30 rounded-2xl border border-slate-800 space-y-4">
+                <i data-lucide="bookmark-x" class="w-16 h-16 text-slate-600 mx-auto"></i>
+                <h3 class="text-xl font-bold text-slate-300">Your Watchlist is Empty</h3>
+                <p class="text-xs text-slate-500">Explore our catalog and click the bookmark icon to save your favorite anime.</p>
+                <button @click="currentView = 'catalog'" class="bg-gradient-to-r from-neonViolet to-electricCyan text-black font-extrabold px-6 py-2.5 rounded-xl text-xs">Browse Anime Catalog</button>
+            </div>
+        </div>
+
+        <!-- ================= ANIME DETAIL & STREAMING PLAYER VIEW ================= -->
+        <div x-show="activeAnime && !isAdminView" class="space-y-8">
+            
+            <!-- Back Navigation -->
+            <button @click="activeAnime = null" class="inline-flex items-center gap-2 text-slate-400 hover:text-white text-xs font-semibold bg-darkNav px-3 py-1.5 rounded-lg border border-slate-800 transition">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Catalog
+            </button>
+
+            <!-- STREAMING VIDEO PLAYER SECTION -->
+            <div class="space-y-4">
+                <div class="bg-black rounded-2xl overflow-hidden border border-slate-800 shadow-2xl relative">
+                    <!-- HTML5 Video Player -->
+                    <div class="relative aspect-video bg-black flex items-center justify-center">
+                        <video x-ref="videoPlayer"
+                               :src="currentEpisode?.videoUrl" 
+                               controls 
+                               autoplay
+                               class="w-full h-full object-contain">
+                            Your browser does not support video playback.
+                        </video>
+                    </div>
+
+                    <!-- Player Controls Bar / Status -->
+                    <div class="p-4 bg-darkNav border-t border-slate-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-neonViolet text-white text-[10px] font-bold px-2 py-0.5 rounded" x-text="`EP ${currentEpisode?.number || 1}`"></span>
+                                <h2 class="text-lg font-bold text-white" x-text="currentEpisode?.title || 'Episode 1'"></h2>
+                            </div>
+                            <p class="text-xs text-slate-400" x-text="`${activeAnime?.title} • Server: ${currentServer}`"></p>
+                        </div>
+
+                        <!-- Player Settings Quick Options -->
+                        <div class="flex items-center gap-3 text-xs">
+                            <div class="flex items-center gap-1 bg-darkCard px-2 py-1 rounded border border-slate-700">
+                                <span class="text-slate-400">Server:</span>
+                                <select x-model="currentServer" class="bg-transparent text-electricCyan font-bold focus:outline-none">
+                                    <option value="Server Alpha (HD)" class="bg-darkCard text-white">Server Alpha (HD)</option>
+                                    <option value="Server Beta (Fast)" class="bg-darkCard text-white">Server Beta (Fast)</option>
+                                    <option value="Server Gamma (4K)" class="bg-darkCard text-white">Server Gamma (4K)</option>
+                                </select>
+                            </div>
+
+                            <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer bg-darkCard px-3 py-1 rounded border border-slate-700">
+                                <input type="checkbox" x-model="autoNext" class="accent-neonViolet rounded">
+                                <span>Auto-Next</span>
+                            </label>
+
+                            <button @click="toggleWatchlist(activeAnime)" class="p-2 bg-darkCard hover:bg-slate-800 text-white rounded border border-slate-700">
+                                <i data-lucide="bookmark" :class="isInWatchlist(activeAnime?.id) ? 'fill-electricCyan text-electricCyan' : ''" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EPISODES SELECTION GRID & ANIME META -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Left: Episodes List -->
+                    <div class="lg:col-span-2 bg-darkCard border border-slate-800 rounded-xl p-5 space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                            <h3 class="font-bold text-white flex items-center gap-2 text-base">
+                                <i data-lucide="list-video" class="w-5 h-5 text-neonViolet"></i> Episodes
+                                <span class="text-xs text-slate-400" x-text="`(${activeAnime?.episodes?.length || 0} Total)`"></span>
+                            </h3>
+                            <span class="text-xs bg-purple-900/60 text-purple-200 px-2.5 py-0.5 rounded-full" x-text="activeAnime?.subDub"></span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-1">
+                            <template x-for="ep in activeAnime?.episodes" :key="ep.id">
+                                <button @click="selectEpisode(ep)" 
+                                        :class="currentEpisode?.id === ep.id ? 'bg-gradient-to-r from-neonViolet/30 to-purple-900/40 border-neonViolet text-white shadow-glowViolet' : 'bg-darkNav hover:bg-slate-800/80 border-slate-800 text-slate-300'"
+                                        class="p-3 rounded-xl border flex items-center gap-3 text-left transition group">
+                                    <div class="w-10 h-10 rounded-lg bg-slate-900 border border-slate-700/60 flex items-center justify-center font-black text-electricCyan shrink-0 group-hover:scale-105 transition">
+                                        <span x-text="ep.number"></span>
+                                    </div>
+                                    <div class="flex-1 overflow-hidden">
+                                        <div class="font-bold text-xs line-clamp-1" x-text="ep.title"></div>
+                                        <div class="text-[10px] text-slate-400 mt-0.5" x-text="ep.duration || '24m'"></div>
+                                    </div>
+                                    <i data-lucide="play-circle" x-show="currentEpisode?.id === ep.id" class="w-4 h-4 text-electricCyan shrink-0"></i>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Right: Anime Synopsis & Studio Info -->
+                    <div class="bg-darkCard border border-slate-800 rounded-xl p-5 space-y-4 flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div class="flex items-start gap-4">
+                                <img :src="activeAnime?.poster" class="w-20 h-28 object-cover rounded-lg border border-slate-700 shadow-md">
+                                <div class="space-y-1">
+                                    <h2 class="font-extrabold text-white text-base leading-tight" x-text="activeAnime?.title"></h2>
+                                    <p class="text-xs text-neonGlow" x-text="`Studio: ${activeAnime?.studio}`"></p>
+                                    <div class="flex items-center gap-2 pt-1 text-xs">
+                                        <span class="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded font-bold" x-text="`★ ${activeAnime?.rating}`"></span>
+                                        <span class="text-slate-400" x-text="activeAnime?.year"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-300 leading-relaxed line-clamp-6" x-text="activeAnime?.description"></p>
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-800 flex flex-wrap gap-1">
+                            <template x-for="g in activeAnime?.genres" :key="'detail-g-'+g">
+                                <span class="text-[10px] bg-slate-800/90 border border-slate-700 text-slate-300 px-2 py-0.5 rounded" x-text="g"></span>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LIVE COMMENTS & COMMUNITY DISCUSSION -->
+                <div class="bg-darkCard border border-slate-800 rounded-xl p-5 space-y-6">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h3 class="font-bold text-white text-base flex items-center gap-2">
+                            <i data-lucide="message-square" class="w-5 h-5 text-electricCyan"></i> Episode Comments
+                            <span class="text-xs text-slate-400" x-text="`(${currentEpisodeComments.length})`"></span>
+                        </h3>
+                    </div>
+
+                    <!-- Add Comment Form -->
+                    <form @submit.prevent="postComment()" class="space-y-3">
+                        <div class="flex gap-3">
+                            <input type="text" 
+                                   x-model="newCommentAuthor" 
+                                   placeholder="Your Username" 
+                                   required 
+                                   class="w-1/3 min-w-[120px] bg-darkNav border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-neonGlow">
+                            <input type="text" 
+                                   x-model="newCommentText" 
+                                   placeholder="Share your thoughts on this episode..." 
+                                   required 
+                                   class="flex-1 bg-darkNav border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-neonGlow">
+                            <button type="submit" class="bg-neonViolet hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1 shrink-0">
+                                <i data-lucide="send" class="w-3.5 h-3.5"></i> Post
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Comments List -->
+                    <div class="space-y-3 max-h-80 overflow-y-auto pr-1">
+                        <template x-for="comment in currentEpisodeComments" :key="comment.id">
+                            <div class="p-3 bg-darkNav border border-slate-800/80 rounded-xl space-y-1">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-purple-600 to-cyan-500 flex items-center justify-center text-[10px] font-black text-white" x-text="comment.author.substring(0,2).toUpperCase()"></div>
+                                        <span class="font-bold text-xs text-slate-200" x-text="comment.author"></span>
+                                        <span x-show="comment.isAdmin" class="bg-pink-900/60 text-pink-300 text-[9px] px-1.5 py-0.2 rounded border border-pink-500/30 font-bold">MOD</span>
+                                    </div>
+                                    <span class="text-[10px] text-slate-500" x-text="comment.timestamp"></span>
+                                </div>
+                                <p class="text-xs text-slate-300 pl-8 leading-relaxed" x-text="comment.text"></p>
+                            </div>
+                        </template>
+
+                        <div x-show="currentEpisodeComments.length === 0" class="text-center py-6 text-xs text-slate-500">
+                            Be the first to leave a comment on this episode!
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ================= ADMIN CONTROL CENTER DASHBOARD ================= -->
+        <div x-show="isAdminView && isAdmin" class="space-y-8">
+            
+            <!-- Dashboard Header -->
+            <div class="bg-gradient-to-r from-purple-950 via-darkCard to-indigo-950 p-6 rounded-2xl border border-neonViolet/40 shadow-neon flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="bg-pink-500/20 text-pink-300 text-xs px-2.5 py-0.5 rounded-full font-bold border border-pink-500/40 uppercase">Control Center</span>
+                        <span class="text-xs text-slate-400">Shmurk Anime Engine v2.4</span>
+                    </div>
+                    <h1 class="text-2xl font-black text-white mt-1">Administrator Dashboard</h1>
+                    <p class="text-xs text-slate-400">Manage titles, episodes, banners, announcements, and comments in real-time.</p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button @click="isAdminView = false" class="bg-darkNav hover:bg-slate-800 text-white text-xs px-4 py-2 rounded-xl border border-slate-700 flex items-center gap-1.5 transition">
+                        <i data-lucide="eye" class="w-4 h-4"></i> Switch to Viewer Mode
+                    </button>
+                    <button @click="logoutAdmin()" class="bg-rose-900/60 hover:bg-rose-800 border border-rose-500/30 text-rose-200 text-xs px-3 py-2 rounded-xl transition">
+                        Logout
+                    </button>
+                </div>
+            </div>
+
+            <!-- ANALYTICS METRIC CARDS -->
+            <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                <div class="bg-darkCard border border-slate-800 p-4 rounded-xl space-y-1">
+                    <span class="text-[11px] text-slate-400 font-medium">Total Titles</span>
+                    <div class="text-2xl font-black text-white" x-text="animeList.length"></div>
+                    <span class="text-[10px] text-emerald-400 font-medium">Active in database</span>
+                </div>
+                <div class="bg-darkCard border border-slate-800 p-4 rounded-xl space-y-1">
+                    <span class="text-[11px] text-slate-400 font-medium">Total Episodes</span>
+                    <div class="text-2xl font-black text-electricCyan" x-text="totalEpisodesCount"></div>
+                    <span class="text-[10px] text-electricCyan font-medium">Ready to stream</span>
+                </div>
+                <div class="bg-darkCard border border-slate-800 p-4 rounded-xl space-y-1">
+                    <span class="text-[11px] text-slate-400 font-medium">Active Streams</span>
+                    <div class="text-2xl font-black text-neonGlow">1,482</div>
+                    <span class="text-[10px] text-purple-400 font-medium">+14% vs yesterday</span>
+                </div>
+                <div class="bg-darkCard border border-slate-800 p-4 rounded-xl space-y-1">
+                    <span class="text-[11px] text-slate-400 font-medium">Total Comments</span>
+                    <div class="text-2xl font-black text-amber-400" x-text="allComments.length"></div>
+                    <span class="text-[10px] text-amber-400 font-medium">Across all episodes</span>
+                </div>
+                <div class="bg-darkCard border border-slate-800 p-4 rounded-xl space-y-1 col-span-2 lg:col-span-1">
+                    <span class="text-[11px] text-slate-400 font-medium">Server Bandwidth</span>
+                    <div class="text-2xl font-black text-emerald-400">4.2 TB</div>
+                    <span class="text-[10px] text-slate-400">Monthly limit: 20 TB</span>
+                </div>
+            </div>
+
+            <!-- ADMIN TABS NAVIGATION -->
+            <div class="flex border-b border-slate-800 gap-4">
+                <button @click="adminTab = 'anime'" :class="adminTab === 'anime' ? 'border-neonViolet text-neonGlow font-bold' : 'border-transparent text-slate-400 hover:text-slate-200'" class="pb-3 border-b-2 text-sm transition">
+                    Anime Catalog CRUD
+                </button>
+                <button @click="adminTab = 'episodes'" :class="adminTab === 'episodes' ? 'border-neonViolet text-neonGlow font-bold' : 'border-transparent text-slate-400 hover:text-slate-200'" class="pb-3 border-b-2 text-sm transition">
+                    Episode Manager
+                </button>
+                <button @click="adminTab = 'settings'" :class="adminTab === 'settings' ? 'border-neonViolet text-neonGlow font-bold' : 'border-transparent text-slate-400 hover:text-slate-200'" class="pb-3 border-b-2 text-sm transition">
+                    Announcements & Comments
+                </button>
+            </div>
+
+            <!-- TAB 1: ANIME MANAGEMENT (CRUD) -->
+            <div x-show="adminTab === 'anime'" class="space-y-6">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-bold text-white">All Anime Series</h2>
+                    <button @click="openAnimeModal()" class="bg-gradient-to-r from-neonViolet to-purple-600 hover:from-purple-600 hover:to-neonViolet text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-glowViolet">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Add New Anime Title
+                    </button>
+                </div>
+
+                <!-- Anime Table -->
+                <div class="bg-darkCard border border-slate-800 rounded-xl overflow-x-auto shadow-xl">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-darkNav border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                            <tr>
+                                <th class="p-3">Poster</th>
+                                <th class="p-3">Title</th>
+                                <th class="p-3">Studio</th>
+                                <th class="p-3">Genres</th>
+                                <th class="p-3">Rating</th>
+                                <th class="p-3">Episodes</th>
+                                <th class="p-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800">
+                            <template x-for="anime in animeList" :key="'admin-list-'+anime.id">
+                                <tr class="hover:bg-slate-800/40">
+                                    <td class="p-3">
+                                        <img :src="anime.poster" class="w-10 h-14 object-cover rounded border border-slate-700">
+                                    </td>
+                                    <td class="p-3 font-bold text-white" x-text="anime.title"></td>
+                                    <td class="p-3 text-slate-400" x-text="anime.studio"></td>
+                                    <td class="p-3">
+                                        <div class="flex flex-wrap gap-1 max-w-xs">
+                                            <template x-for="g in anime.genres" :key="g">
+                                                <span class="bg-slate-800 text-[9px] px-1.5 py-0.5 rounded" x-text="g"></span>
+                                            </template>
+                                        </div>
+                                    </td>
+                                    <td class="p-3 text-amber-400 font-bold" x-text="`★ ${anime.rating}`"></td>
+                                    <td class="p-3" x-text="anime.episodes?.length || 0"></td>
+                                    <td class="p-3 text-right space-x-2">
+                                        <button @click="openAnimeModal(anime)" class="p-1.5 bg-darkNav hover:bg-slate-700 rounded text-slate-300">
+                                            <i data-lucide="edit" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                        <button @click="deleteAnime(anime.id)" class="p-1.5 bg-rose-950/80 hover:bg-rose-800 rounded text-rose-300">
+                                            <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 2: EPISODE MANAGER -->
+            <div x-show="adminTab === 'episodes'" class="space-y-6">
+                <div class="bg-darkCard border border-slate-800 p-5 rounded-xl space-y-4">
+                    <h2 class="text-base font-bold text-white">Select Anime Series to Manage Episodes</h2>
+                    
+                    <select x-model="selectedAdminAnimeId" class="w-full max-w-md bg-darkNav border border-slate-700 text-slate-200 text-xs rounded-xl p-3 focus:outline-none focus:border-neonGlow">
+                        <template x-for="anime in animeList" :key="'select-ep-'+anime.id">
+                            <option :value="anime.id" x-text="`${anime.title} (${anime.episodes?.length || 0} Ep)`"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <template x-if="selectedAdminAnime">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-white text-sm" x-text="`Episodes for: ${selectedAdminAnime.title}`"></h3>
+                            <button @click="openEpisodeModal()" class="bg-electricCyan hover:bg-cyan-400 text-black font-extrabold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add New Episode
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <template x-for="ep in selectedAdminAnime.episodes" :key="'ep-admin-'+ep.id">
+                                <div class="p-3 bg-darkCard border border-slate-800 rounded-xl flex items-center justify-between">
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="bg-neonViolet text-white text-[10px] font-bold px-1.5 py-0.2 rounded" x-text="`Ep ${ep.number}`"></span>
+                                            <span class="font-bold text-xs text-white" x-text="ep.title"></span>
+                                        </div>
+                                        <p class="text-[10px] text-slate-500 line-clamp-1" x-text="ep.videoUrl"></p>
+                                    </div>
+                                    <div class="flex gap-1">
+                                        <button @click="openEpisodeModal(ep)" class="p-1.5 bg-darkNav hover:bg-slate-700 rounded text-slate-300">
+                                            <i data-lucide="edit" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                        <button @click="deleteEpisode(ep.id)" class="p-1.5 bg-rose-950 hover:bg-rose-800 rounded text-rose-300">
+                                            <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- TAB 3: ANNOUNCEMENTS & MODERATION -->
+            <div x-show="adminTab === 'settings'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Announcement Manager -->
+                <div class="bg-darkCard border border-slate-800 p-5 rounded-xl space-y-4">
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <i data-lucide="megaphone" class="w-4 h-4 text-electricCyan"></i> Site Banner Announcement
+                    </h2>
+                    
+                    <form @submit.prevent="saveAnnouncement()" class="space-y-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Announcement Text</label>
+                            <input type="text" x-model="announcementInput" placeholder="E.g. Solo Leveling Episode 12 is now streaming in 4K!" class="w-full bg-darkNav border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-neonGlow">
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="submit" class="bg-neonViolet hover:bg-purple-600 text-white font-bold px-4 py-2 rounded-lg text-xs">Update Announcement Banner</button>
+                            <button type="button" @click="announcement = ''; announcementInput = ''; saveStorage();" class="bg-darkNav hover:bg-slate-800 text-slate-400 px-3 py-2 rounded-lg text-xs">Clear Banner</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Comments Moderation -->
+                <div class="bg-darkCard border border-slate-800 p-5 rounded-xl space-y-4">
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <i data-lucide="shield-alert" class="w-4 h-4 text-pink-400"></i> Moderate Recent Comments
+                    </h2>
+
+                    <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                        <template x-for="c in allComments" :key="'mod-'+c.id">
+                            <div class="p-2.5 bg-darkNav rounded-lg border border-slate-800 text-xs flex justify-between items-start gap-2">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-slate-200" x-text="c.author"></span>
+                                        <span class="text-[9px] text-slate-500" x-text="c.timestamp"></span>
+                                    </div>
+                                    <p class="text-slate-300 mt-1" x-text="c.text"></p>
+                                </div>
+                                <button @click="deleteComment(c.id)" class="text-rose-400 hover:text-rose-300 p-1">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-darkNav border-t border-slate-800/80 mt-12 py-8 text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-md bg-neonViolet flex items-center justify-center font-bold text-black text-xs">S</div>
+                <span class="font-bold text-slate-300">SHMURK ANIME (SURK)</span>
+                <span>• Stream Unlimited Anime Anywhere</span>
+            </div>
+            <div class="flex gap-4">
+                <a href="#" class="hover:text-slate-300">Privacy Policy</a>
+                <a href="#" class="hover:text-slate-300">Terms of Service</a>
+                <a href="#" class="hover:text-slate-300">DMCA</a>
+                <a href="#" class="hover:text-slate-300">Contact Admin</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- ADMIN LOGIN MODAL -->
+    <div x-show="showAdminLoginModal" x-cloak class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-darkCard border border-neonViolet/50 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-neon relative">
+            <button @click="showAdminLoginModal = false" class="absolute top-4 right-4 text-slate-500 hover:text-white">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+            <div class="text-center space-y-1">
+                <div class="w-12 h-12 bg-neonViolet/20 border border-neonViolet text-neonGlow rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i data-lucide="shield-lock" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white">Shmurk Admin Access</h3>
+                <p class="text-xs text-slate-400">Enter passcode to unlock control panel (Default passcode: <span class="text-electricCyan font-mono">admin123</span>)</p>
+            </div>
+            <form @submit.prevent="loginAdmin()" class="space-y-3">
+                <input type="password" x-model="adminPasscode" placeholder="Enter Admin Passcode" required class="w-full bg-darkNav border border-slate-700 rounded-xl p-3 text-sm text-slate-100 text-center focus:outline-none focus:border-neonGlow">
+                <button type="submit" class="w-full bg-gradient-to-r from-neonViolet to-electricCyan text-black font-extrabold py-3 rounded-xl text-xs uppercase tracking-wider shadow-neon">Unlock Admin Panel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ANIME CRUD MODAL (ADD / EDIT) -->
+    <div x-show="showAnimeModal" x-cloak class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-darkCard border border-slate-800 rounded-2xl p-6 max-w-2xl w-full my-8 space-y-4 relative">
+            <button @click="showAnimeModal = false" class="absolute top-4 right-4 text-slate-500 hover:text-white">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+            <h3 class="text-lg font-bold text-white" x-text="editingAnime ? 'Edit Anime Title' : 'Add New Anime Title'"></h3>
+
+            <form @submit.prevent="saveAnime()" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div class="md:col-span-2 space-y-1">
+                    <label class="text-slate-400">Title</label>
+                    <input type="text" x-model="animeForm.title" required class="w-full bg-darkNav border border-slate-700 rounded-lg p-2.5 text-slate-200">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-slate-400">Poster Image URL</label>
+                    <input type="url" x-model="animeForm.poster" required class="w-full bg-darkNav border border-slate-700 rounded-lg p-2.5 text-slate-200">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-slate-400">Banner Image URL</label>
+                    <input type="url" x-model="animeForm.banner" required class="w-full bg-darkNav border border-slate-700 rounded-lg p-2.5 text-slate-200">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-slate-400">Studio</label>
+                    <input type="text" x-model="animeForm.studio" required class="w-full bg-darkNav border border-slate-700 rounded-lg p-2.5 text-slate-200">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-slate-400">Release Year</label>
+                    <input type="number" x-model="animeForm.year" required class="w-full bg-darkNav border border-slate-700 rounded-lg p-2.5 text-slate-200">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-slate-400">Rating (e.g. 9.2)</label>
+                    <input type="number" step="0.1" x-model="animeForm.rating" required class="w-full bg-darkNav border border-slate-700 rounded-lg p-2.5 text-slate-200">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-slate-400">Sub / Dub Status</label>
+                    <select x-model="animeForm.subDub" class="w-full bg-darkNav border border-slate-700 rounded-lg p-2.5 text-slate-200">
+                        <option value="SUB">Subtitled</option>
+                        <option value="DUB">Dubbed</option>
+                        <option value="SUB | DUB">SUB | DUB Dual Audio</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2 space-y-1">
+                    <label class="text-slate-400">Genres (Comma separated)</label>
+                    <input type="text" x-model="animeForm.genresStr" placeholder="Action, Isekai, Fantasy" required class="w-full bg-darkNav border border-slate-700 rounded-lg p-2.5 text-slate-200">
+                </div>
+                <div class="md:col-span-2 space-y-1">
+                    <label class="text-slate-400">Synopsis / Description</label>
+                    <textarea x-model="animeForm.description" rows="3" required class="w-full bg-darkNav border border-slate-700 rounded-lg p-2.5 text-slate-200"></textarea>
+                </div>
+
+                <div class="md:col-span-2 flex justify-end gap-2 pt-2">
+                    <button type="button" @click="showAnimeModal = false" class="px-4 py-2 bg-darkNav text-slate-400 rounded-lg">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-neonViolet text-white font-bold rounded-lg shadow-glowViolet">Save Anime Title</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- EPISODE MODAL (ADD / EDIT) -->
+    <div x-show="showEpisodeModal" x-cloak class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-darkCard border border-slate-800 rounded-2xl p-6 max-w-md w-full space-y-4 relative">
+            <button @click="showEpisodeModal = false" class="absolute top-4 right-4 text-slate-500 hover:text-white">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+            <h3 class="text-lg font-bold text-white" x-text="editingEpisode ? 'Edit Episode' : 'Add New Episode'"></h3>
+
+            <form @submit.prevent="saveEpisode()" class="space-y-3 text-xs">
+                <div class="space-y-1">
+                    <label class="text-slate-400">Episode Number</label>
+                    <input type="number" x-model="episodeForm.number" required class="w-full bg-darkNav border border-slate-700 rounded-lg p-2.5 text-slate-200">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-slate-400">Episode Title</label>
+                    <input type="text" x-model="episodeForm.title" required class="w-full bg-darkNav border border-slate-700 rounded-lg p-2.5 text-slate-200">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-slate-400">Video MP4/Stream Direct URL</label>
+                    <input type="url" x-model="episodeForm.videoUrl" required placeholder="https://..." class="w-full bg-darkNav border border-slate-700 rounded-lg p-2.5 text-slate-200">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-slate-400">Duration</label>
+                    <input type="text" x-model="episodeForm.duration" placeholder="24m" required class="w-full bg-darkNav border border-slate-700 rounded-lg p-2.5 text-slate-200">
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" @click="showEpisodeModal = false" class="px-4 py-2 bg-darkNav text-slate-400 rounded-lg">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-electricCyan text-black font-extrabold rounded-lg">Save Episode</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none">
+        <template x-for="toast in toasts" :key="toast.id">
+            <div x-transition class="pointer-events-auto bg-darkCard border border-neonViolet/60 text-white px-4 py-3 rounded-xl shadow-neon flex items-center gap-3 text-xs">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-electricCyan shrink-0"></i>
+                <span x-text="toast.message"></span>
+            </div>
+        </template>
+    </div>
+
+    <!-- MAIN JAVASCRIPT APPLICATION LOGIC -->
+    <script>
+        // Sample Initial Anime Content Data
+        const initialAnimeData = [
+            {
+                id: 'shmurk-1',
+                title: 'Demon Slayer: Hashira Training Arc',
+                studio: 'ufotable',
+                year: 2024,
+                rating: 9.6,
+                quality: '4K HD',
+                subDub: 'SUB | DUB',
+                poster: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80',
+                banner: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80',
+                genres: ['Shonen', 'Action', 'Supernatural', 'Fantasy'],
+                description: 'Tanjiro undergoes rigorous training with the Hashira in preparation for the upcoming final battle against Muzan Kibutsuji.',
+                episodes: [
+                    { id: 'ep-1-1', number: 1, title: 'To Defeat Muzan Kibutsuji', duration: '48m', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' },
+                    { id: 'ep-1-2', number: 2, title: 'Water Hashira Giyu Tomioka Pain', duration: '24m', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4' },
+                    { id: 'ep-1-3', number: 3, title: 'Fully Recovered Tanjiro Joins', duration: '24m', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4' }
+                ]
+            },
+            {
+                id: 'shmurk-2',
+                title: 'Jujutsu Kaisen: Shibuya Incident',
+                studio: 'MAPPA',
+                year: 2023,
+                rating: 9.5,
+                quality: '1080p',
+                subDub: 'SUB | DUB',
+                poster: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=600&auto=format&fit=crop&q=80',
+                banner: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=1200&auto=format&fit=crop&q=80',
+                genres: ['Shonen', 'Action', 'Supernatural', 'Dark Fantasy'],
+                description: 'On October 31st, a curtain descends on Shibuya. Sorcerers clash with cursed spirits in an all-out apocalyptic battle.',
+                episodes: [
+                    { id: 'ep-2-1', number: 1, title: 'Shibuya Incident Begins', duration: '24m', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4' },
+                    { id: 'ep-2-2', number: 2, title: 'Thunderclap Part 1', duration: '24m', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4' }
+                ]
+            },
+            {
+                id: 'shmurk-3',
+                title: 'Solo Leveling: Arise',
+                studio: 'A-1 Pictures',
+                year: 2024,
+                rating: 9.4,
+                quality: '4K HD',
+                subDub: 'SUB',
+                poster: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&auto=format&fit=crop&q=80',
+                banner: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1200&auto=format&fit=crop&q=80',
+                genres: ['Action', 'Fantasy', 'Isekai', 'Adventure'],
+                description: 'In a world where hunters must battle deadly monsters, weak E-rank hunter Sung Jinwoo is given a second chance through a mysterious quest system.',
+                episodes: [
+                    { id: 'ep-3-1', number: 1, title: 'I\'m Used to It', duration: '24m', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4' }
+                ]
+            },
+            {
+                id: 'shmurk-4',
+                title: 'Cyberpunk: Edgerunners',
+                studio: 'Studio Trigger',
+                year: 2022,
+                rating: 9.2,
+                quality: 'HD',
+                subDub: 'SUB | DUB',
+                poster: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&auto=format&fit=crop&q=80',
+                banner: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1200&auto=format&fit=crop&q=80',
+                genres: ['Sci-Fi', 'Action', 'Cyberpunk'],
+                description: 'A street kid trying to survive in a technology and body modification-obsessed city of the future.',
+                episodes: [
+                    { id: 'ep-4-1', number: 1, title: 'Episode 1: Night City', duration: '25m', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' }
+                ]
+            }
+        ];
+
+        function shmurkApp() {
+            return {
+                currentView: 'catalog', // 'catalog', 'watchlist'
+                isAdminView: false,
+                isAdmin: false,
+                showAdminLoginModal: false,
+                adminPasscode: '',
+                adminTab: 'anime', // 'anime', 'episodes', 'settings'
+
+                // Search & Filter
+                searchQuery: '',
+                selectedGenre: 'All',
+                selectedType: 'All',
+                sortBy: 'rating',
+                mobileSearchOpen: false,
+
+                // Content Data
+                animeList: [],
+                watchlist: [],
+                announcement: 'Welcome to Shmurk Anime! Unlimited high-speed 4K streaming updated daily.',
+                announcementInput: '',
+                comments: {}, // key: episodeId, value: []
+
+                // Active Anime View
+                activeAnime: null,
+                currentEpisode: null,
+                currentServer: 'Server Alpha (HD)',
+                autoNext: true,
+
+                // Comment form
+                newCommentAuthor: '',
+                newCommentText: '',
+
+                // Modals & Form State
+                showAnimeModal: false,
+                editingAnime: null,
+                animeForm: { title: '', poster: '', banner: '', studio: '', year: 2024, rating: 9.0, subDub: 'SUB | DUB', genresStr: '', description: '' },
+
+                selectedAdminAnimeId: null,
+                showEpisodeModal: false,
+                editingEpisode: null,
+                episodeForm: { number: 1, title: '', videoUrl: '', duration: '24m' },
+
+                toasts: [],
+
+                genres: ['Shonen', 'Seinen', 'Isekai', 'Romance', 'Fantasy', 'Action', 'Sci-Fi', 'Supernatural'],
+
+                initApp() {
+                    // Load local storage
+                    const localAnime = localStorage.getItem('shmurk_anime_list');
+                    if (localAnime) {
+                        this.animeList = JSON.parse(localAnime);
+                    } else {
+                        this.animeList = initialAnimeData;
+                        this.saveStorage();
+                    }
+
+                    const localWl = localStorage.getItem('shmurk_watchlist');
+                    if (localWl) this.watchlist = JSON.parse(localWl);
+
+                    const localAnnounce = localStorage.getItem('shmurk_announcement');
+                    if (localAnnounce !== null) this.announcement = localAnnounce;
+                    this.announcementInput = this.announcement;
+
+                    const localComments = localStorage.getItem('shmurk_comments');
+                    if (localComments) {
+                        this.comments = JSON.parse(localComments);
+                    } else {
+                        // Dummy initial comment
+                        this.comments = {
+                            'ep-1-1': [
+                                { id: 'c1', author: 'OtakuKing', text: 'This episode animation quality by ufotable is unbelievable!', timestamp: '2 hours ago', isAdmin: false }
+                            ]
+                        };
+                    }
+
+                    if (this.animeList.length > 0) {
+                        this.selectedAdminAnimeId = this.animeList[0].id;
+                    }
+
+                    this.$nextTick(() => lucide.createIcons());
+                },
+
+                saveStorage() {
+                    localStorage.setItem('shmurk_anime_list', JSON.stringify(this.animeList));
+                    localStorage.setItem('shmurk_watchlist', JSON.stringify(this.watchlist));
+                    localStorage.setItem('shmurk_announcement', this.announcement);
+                    localStorage.setItem('shmurk_comments', JSON.stringify(this.comments));
+                },
+
+                showToast(message) {
+                    const id = Date.now();
+                    this.toasts.push({ id, message });
+                    setTimeout(() => {
+                        this.toasts = this.toasts.filter(t => t.id !== id);
+                    }, 3000);
+                },
+
+                // Filters
+                get filteredAnime() {
+                    return this.animeList.filter(anime => {
+                        const matchesSearch = anime.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                                              anime.studio.toLowerCase().includes(this.searchQuery.toLowerCase());
+                        const matchesGenre = this.selectedGenre === 'All' || anime.genres.includes(this.selectedGenre);
+                        const matchesType = this.selectedType === 'All' || anime.subDub.includes(this.selectedType);
+                        return matchesSearch && matchesGenre && matchesType;
+                    }).sort((a, b) => {
+                        if (this.sortBy === 'rating') return b.rating - a.rating;
+                        if (this.sortBy === 'newest') return b.year - a.year;
+                        if (this.sortBy === 'title') return a.title.localeCompare(b.title);
+                        return 0;
+                    });
+                },
+
+                get featuredAnimeList() {
+                    return this.animeList.slice(0, 3);
+                },
+
+                get watchlistAnimeList() {
+                    return this.animeList.filter(a => this.watchlist.includes(a.id));
+                },
+
+                // Watchlist Actions
+                toggleWatchlist(anime) {
+                    if (!anime) return;
+                    if (this.isInWatchlist(anime.id)) {
+                        this.watchlist = this.watchlist.filter(id => id !== anime.id);
+                        this.showToast(`Removed "${anime.title}" from Watchlist`);
+                    } else {
+                        this.watchlist.push(anime.id);
+                        this.showToast(`Added "${anime.title}" to Watchlist`);
+                    }
+                    this.saveStorage();
+                },
+
+                isInWatchlist(id) {
+                    return this.watchlist.includes(id);
+                },
+
+                clearWatchlist() {
+                    this.watchlist = [];
+                    this.saveStorage();
+                    this.showToast("Watchlist cleared.");
+                },
+
+                // Detail View & Player
+                openAnimeDetail(anime) {
+                    this.activeAnime = anime;
+                    if (anime.episodes && anime.episodes.length > 0) {
+                        this.currentEpisode = anime.episodes[0];
+                    } else {
+                        this.currentEpisode = null;
+                    }
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    this.$nextTick(() => lucide.createIcons());
+                },
+
+                selectEpisode(episode) {
+                    this.currentEpisode = episode;
+                    this.$nextTick(() => {
+                        if (this.$refs.videoPlayer) {
+                            this.$refs.videoPlayer.play();
+                        }
+                    });
+                },
+
+                // Comments Logic
+                get currentEpisodeComments() {
+                    if (!this.currentEpisode) return [];
+                    return this.comments[this.currentEpisode.id] || [];
+                },
+
+                postComment() {
+                    if (!this.newCommentAuthor || !this.newCommentText || !this.currentEpisode) return;
+                    const epId = this.currentEpisode.id;
+                    if (!this.comments[epId]) this.comments[epId] = [];
+
+                    this.comments[epId].unshift({
+                        id: 'c-' + Date.now(),
+                        author: this.newCommentAuthor,
+                        text: this.newCommentText,
+                        timestamp: 'Just now',
+                        isAdmin: this.isAdmin
+                    });
+
+                    this.newCommentText = '';
+                    this.saveStorage();
+                    this.showToast("Comment posted!");
+                },
+
+                deleteComment(commentId) {
+                    for (let epId in this.comments) {
+                        this.comments[epId] = this.comments[epId].filter(c => c.id !== commentId);
+                    }
+                    this.saveStorage();
+                    this.showToast("Comment deleted");
+                },
+
+                get allComments() {
+                    let all = [];
+                    for (let epId in this.comments) {
+                        all = all.concat(this.comments[epId]);
+                    }
+                    return all;
+                },
+
+                // Admin Auth & Modal
+                toggleAdminModal() {
+                    if (this.isAdmin) {
+                        this.isAdminView = !this.isAdminView;
+                    } else {
+                        this.showAdminLoginModal = true;
+                    }
+                },
+
+                loginAdmin() {
+                    if (this.adminPasscode === 'admin123' || this.adminPasscode === 'surk') {
+                        this.isAdmin = true;
+                        this.isAdminView = true;
+                        this.showAdminLoginModal = false;
+                        this.adminPasscode = '';
+                        this.showToast("Admin Panel Access Granted!");
+                        this.$nextTick(() => lucide.createIcons());
+                    } else {
+                        this.showToast("Invalid Admin Passcode!");
+                    }
+                },
+
+                logoutAdmin() {
+                    this.isAdmin = false;
+                    this.isAdminView = false;
+                    this.showToast("Logged out from Admin");
+                },
+
+                dismissAnnouncement() {
+                    this.announcement = '';
+                },
+
+                saveAnnouncement() {
+                    this.announcement = this.announcementInput;
+                    this.saveStorage();
+                    this.showToast("Announcement banner updated!");
+                },
+
+                // Anime CRUD
+                openAnimeModal(anime = null) {
+                    this.editingAnime = anime;
+                    if (anime) {
+                        this.animeForm = {
+                            title: anime.title,
+                            poster: anime.poster,
+                            banner: anime.banner,
+                            studio: anime.studio,
+                            year: anime.year,
+                            rating: anime.rating,
+                            subDub: anime.subDub,
+                            genresStr: anime.genres.join(', '),
+                            description: anime.description
+                        };
+                    } else {
+                        this.animeForm = { title: '', poster: '', banner: '', studio: '', year: 2024, rating: 9.0, subDub: 'SUB | DUB', genresStr: '', description: '' };
+                    }
+                    this.showAnimeModal = true;
+                },
+
+                saveAnime() {
+                    const genresArr = this.animeForm.genresStr.split(',').map(g => g.trim()).filter(g => g.length > 0);
+                    if (this.editingAnime) {
+                        // Update
+                        Object.assign(this.editingAnime, {
+                            ...this.animeForm,
+                            genres: genresArr
+                        });
+                        this.showToast("Anime updated successfully");
+                    } else {
+                        // Add new
+                        const newAnime = {
+                            id: 'anime-' + Date.now(),
+                            ...this.animeForm,
+                            genres: genresArr,
+                            episodes: []
+                        };
+                        this.animeList.push(newAnime);
+                        this.showToast("New Anime added to catalog!");
+                    }
+                    this.saveStorage();
+                    this.showAnimeModal = false;
+                },
+
+                deleteAnime(id) {
+                    if (confirm("Are you sure you want to delete this anime?")) {
+                        this.animeList = this.animeList.filter(a => a.id !== id);
+                        this.saveStorage();
+                        this.showToast("Anime deleted");
+                    }
+                },
+
+                // Episodes CRUD
+                get selectedAdminAnime() {
+                    return this.animeList.find(a => a.id === this.selectedAdminAnimeId);
+                },
+
+                openEpisodeModal(episode = null) {
+                    this.editingEpisode = episode;
+                    if (episode) {
+                        this.episodeForm = { ...episode };
+                    } else {
+                        const nextNum = (this.selectedAdminAnime?.episodes?.length || 0) + 1;
+                        this.episodeForm = { number: nextNum, title: `Episode ${nextNum}`, videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', duration: '24m' };
+                    }
+                    this.showEpisodeModal = true;
+                },
+
+                saveEpisode() {
+                    const anime = this.selectedAdminAnime;
+                    if (!anime) return;
+
+                    if (this.editingEpisode) {
+                        Object.assign(this.editingEpisode, this.episodeForm);
+                        this.showToast("Episode updated");
+                    } else {
+                        if (!anime.episodes) anime.episodes = [];
+                        anime.episodes.push({
+                            id: 'ep-' + Date.now(),
+                            ...this.episodeForm
+                        });
+                        this.showToast("New episode added!");
+                    }
+                    this.saveStorage();
+                    this.showEpisodeModal = false;
+                },
+
+                deleteEpisode(epId) {
+                    const anime = this.selectedAdminAnime;
+                    if (!anime) return;
+                    anime.episodes = anime.episodes.filter(e => e.id !== epId);
+                    this.saveStorage();
+                    this.showToast("Episode deleted");
+                },
+
+                get totalEpisodesCount() {
+                    return this.animeList.reduce((acc, a) => acc + (a.episodes?.length || 0), 0);
+                }
+            };
+        }
+    </script>
+</body>
+</html>
